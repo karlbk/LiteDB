@@ -1,5 +1,5 @@
 import sqlite3 as sq 
-db_ = "C:/Users/user/Documents/GitHub/Sqlite3-Simple-Database/database.db"
+db_ = "database.db"
 up = lambda n : str(n).upper().replace(" ","_")
 
 class database_interactions:
