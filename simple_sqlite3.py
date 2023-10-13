@@ -1,6 +1,6 @@
 import sqlite3 as sq 
 db_ = "C:/Users/user/Documents/GitHub/Sqlite3-Simple-Database/database.db"
-up = lambda n : str(n).upper().replace(" ","")
+up = lambda n : str(n).upper().replace(" ","_")
 
 class database_interactions:
     def __init__(self,db:str):
@@ -114,6 +114,9 @@ class database_interactions:
         self.conn.commit()
 
     def delete_record(self,table:str,*records:list, **oids:bool):
+        """Specify whether to delete record with an oid key or without.
+           Oid keys are set to each record by numerical order once the record is
+           inserted in a table."""
         
         def delete_record_without_oid():
             self.c.execute("SELECT *,oid FROM "+up(table))
