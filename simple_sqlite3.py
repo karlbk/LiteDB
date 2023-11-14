@@ -189,4 +189,4 @@ class database_interactions:
 di = database_interactions(db_)
 
 if __name__ == "__main__":
-   di.edit_record("table 1",["-NOCHANGE-","sup"],oids_set=2)
+   pass
