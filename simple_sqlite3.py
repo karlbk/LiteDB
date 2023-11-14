@@ -74,7 +74,7 @@ class database_interactions:
         self.conn.commit()
 
     def edit_record(self,table:str,*new_records:list,**oids_set:int):
-        """If the record doens't need to change, enter -NOCHANGE- as an argument for the wanted record."""
+        """If the record doens't need to change, enter NOCHANGE as an argument for the wanted record."""
         value = ""
         for d in oids_set.values():
             value += str(d)
@@ -95,7 +95,7 @@ class database_interactions:
         for l in new_records:
             for h in l:
                 num += 1
-                if h == "-NOCHANGE-":
+                if h == "NOCHANGE":
                     h = f"|{old_records[num]}|"
                     recs += (h,)
                 else:
@@ -116,7 +116,6 @@ class database_interactions:
         for q in range(int(len(t)/2)):
             p.update({u[q]:recs[q]})
         p.update({"oid":str(value)})
-        
         
         self.c.execute("UPDATE "+up(table)+" SET "+i[0:-1]+" WHERE oid = :oid ",p)
 
