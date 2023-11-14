@@ -81,7 +81,7 @@ def delete_record():
 def edit_record():
     try:
         x = input("Enter table name to edit record from: ")
-        x1 = input("Enter the number of columns in that table: ").replace(" ","")
+        x1 = di.get_column_number_from_table(up(x))
         x3 = input("Enter the oid of the record: ")
         empty = []
         for i in range(int(x1)):
@@ -137,30 +137,30 @@ def start():
 7- QUERY TABLES
 8- RESET RECORDS
 9- RESET ALL
-10- QUIT
+10- QUIT or q
     """
     print(x)
-    x1 = input("Input command: ")
+    x1 = input("Input command number: ")
     y = x1.upper().replace(" ","")
-    if y =="INSERTRECORD":
+    if y =="1":
         insert_record()
-    if y =="EDITRECORD":
+    if y =="2":
         edit_record()
-    if y=="DELETERECORD":
+    if y=="3":
         delete_record()
-    if y=="CREATETABLE":
+    if y=="4":
         create_table()
-    if y=="DELETETABLE":
+    if y=="5":
         delete_table()
-    if y=="QUERYRECORDS":
+    if y=="6":
         query_records()
-    if y=="QUERYTABLES":
+    if y=="7":
         query_tables()
-    if y=="RESETRECORDS":
+    if y=="8":
         reset_records()
-    if y=="RESETALL":
+    if y=="9":
         reset_all()
-    if y=="QUIT":
+    if y=="10" or y=="Q":
         quit()
     else:
         start()
