@@ -77,6 +77,8 @@ class database_interactions:
         value = ""
         for d in oids_set.values():
             value += str(d)
+
+        old_records = database_interactions(db_).query_all([up(table)])[0][0:2]
         
         u = ()
         for k in new_records:
@@ -88,11 +90,17 @@ class database_interactions:
             y += str(len(g))
 
         recs = ()
+        num = -1
         for l in new_records:
             for h in l:
-                h = f"|{h}|"
-                recs += (h,)
-
+                num += 1
+                if h == "-NOCHANGE-":
+                    h = f"|{old_records[num]}|"
+                    recs += (h,)
+                else:
+                    h = f"|{h}|"
+                    recs += (h,)
+        
         self.c.execute("SELECT * FROM "+up(table))
         beta = []
         for row in self.c.description:
