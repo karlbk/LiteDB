@@ -1,192 +1,109 @@
-import sqlite3 as sq 
-db_ = "C:/Users/user/Documents/GitHub/Sqlite3-Simple-Database/database.db"
-up = lambda n : str(n).upper().replace(" ","")
+import sqlite3
+from typing import Any, List, Dict
 
-class database_interactions:
-    def __init__(self,db:str):
+class DatabaseInteractions:
+    def __init__(self, db):
         self.db = db
-        self.conn = sq.connect(self.db)
-        self.c = self.conn.cursor()
 
-    def get_column_number_from_table(self,table:str):
-        self.c.execute("SELECT name FROM sqlite_master WHERE type='table';")
-        tables = self.c.fetchall()
-        col_list = []
-        for i in tables:
-            for j in i:
-                if j == table:
-                    self.c.execute("SELECT * FROM "+str(j))
-                    for a in self.c.description:
-                        col_list.append(a[0])
-        return(len(col_list))
+    def __enter__(self):
+        self.conn = sqlite3.connect(self.db)
+        return self
 
-    def create_table(self,table:str,*columns:list):
-        empty = []
-        for i in columns:
-            for j in i:
-                e = up(j)
-                e += " TEXT,"
-                empty.append(str(e))
-        y = ""
-        for j in empty:
-            y += str(j)
-        x = len(y)
-        final = y[0:x-1]
-        self.c.execute("CREATE TABLE "+up(table)+"("+final+")")
+    def __exit__(self):
+        self.conn.close()
 
-        self.conn.commit()
+    def create_table(self, table: str, *columns: str) -> None:
+        with self.conn:
+            column_defs = ', '.join([f'{col.upper().replace(" ", "_")} TEXT' for col in columns])
+            self.conn.execute(f"CREATE TABLE IF NOT EXISTS {table.upper()} ({column_defs})")
 
-    def insert_record(self,table:str,*records:list):
-        col_nbr = database_interactions(self.db).get_column_number_from_table(table)
-       
-        alpha = []
-        for j in range(0,int(col_nbr)):
-            alpha.append(":%s")
-        x = ",".join(alpha)
+    def insert_record(self, table: str, *records: List[Any]) -> None:
+        with self.conn:
+            column_names = ', '.join(records[0].keys())
+            placeholders = ', '.join(['?' for _ in records[0]])
+            query = f"INSERT INTO {table.upper()} ({column_names}) VALUES ({placeholders})"
+            self.conn.executemany(query, [tuple(record.values()) for record in records])
 
-        recs = ()
-        for l in records:
-            for y in l:
-                y = f"|{y}|"
-                recs += (y,)
+    def delete_table(self, *tables: str) -> None:
+        with self.conn:
+            for table in tables:
+                self.conn.execute(f"DROP TABLE IF EXISTS {table.upper()}")
 
-        self.c.execute("SELECT * FROM "+up(table))
-        u = ()
-        a1 = ""
-        for row in self.c.description:
-            u += (row[0],)
-            a1 += f":{row[0]},"
+    def edit_record(self, table: str, oid: int, **updates: Dict[str, Any]) -> None:
+        with self.conn:
+            update_str = ', '.join([f"{key.upper().replace(' ', '_')}=?" for key in updates.keys()])
+            query = f"UPDATE {table.upper()} SET {update_str} WHERE OID=?"
+            self.conn.execute(query, tuple(updates.values()) + (oid,))
+
+    def delete_record(self, table: str, **conditions: Dict[str, Any]) -> None:
+        with self.conn:
+            condition_str = ' AND '.join([f"{key.upper().replace(' ', '_')}=?" for key in conditions.keys()])
+            query = f"DELETE FROM {table.upper()} WHERE {condition_str}"
+            self.conn.execute(query, tuple(conditions.values()))
+
+    def query_records(self, *tables: str) -> List[List[Any]]:
+        results = []
+        with self.conn:
+            for table in tables:
+                cursor = self.conn.execute(f"SELECT * FROM {table.upper()}")
+                results.extend(cursor.fetchall())
+        return results
+
+    def query_tables(self) -> List[str]:
+        with self.conn:
+            cursor = self.conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            return [row[0] for row in cursor.fetchall()]
+
+    def reset_all(self) -> None:
+        with self.conn:
+            tables = self.query_tables()
+            for table in tables:
+                self.conn.execute(f"DELETE FROM {table.upper()}")
+
+    def delete_all_content(self) -> None:
+        with self.conn:
+            tables = self.query_tables()
+            for table in tables:
+                self.conn.execute(f"DROP TABLE IF EXISTS {table}")
+
+def main():
+    db = "Database/example.db"
+
+    #Create Table
+    with DatabaseInteractions(db) as di:
+        di.create_table('students','id','name','age')
+
+    #Insert Record
+    with DatabaseInteractions(db) as di:
+        di.insert_record("students", {"id": 1, "name": "Alice", "age": 25})
+        di.insert_record("students", {"id": 2, "name": "Bob", "age": 30})
     
-        t= u + recs
-        p = {}
-        for q in range(int(len(t)/2)):
-            p.update({u[q]:recs[q]})
+    #Query Records In A Table
+    with DatabaseInteractions(db) as di:
+        print(di.query_records("students"))
+    #Edit Record
+    with DatabaseInteractions(db) as di:
+        di.edit_record("students",1,name="Alice Smith")
 
-        self.c.execute("INSERT INTO "+up(table)+" VALUES("+a1[0:-1]+")",p)
+    #Delete Record
+    with DatabaseInteractions(db) as di:
+        di.delete_record("students",id=2)
 
-        self.conn.commit()
+    #Delete Table
+    with DatabaseInteractions(db) as di:
+        di.delete_table("students")
 
-    def delete_table(self,*tables:list):
-        for i in tables:
-           for j in i:
-            self.c.execute("DROP TABLE "+up(j))
+    #Reset All Tables
+    with DatabaseInteractions(db) as di:
+        di.reset_all()
 
-        self.conn.commit()
-
-    def edit_record(self,table:str,*new_records:list,**oids_set:int):
-        value = ""
-        for d in oids_set.values():
-            value += str(d)
-
-        old_records = database_interactions(db_).query_all([up(table)])[0][0:2]
-        
-        u = ()
-        for k in new_records:
-            for t in k:
-                u += (str(t).replace(" ","_"),)
-
-        y = ""
-        for g in new_records:
-            y += str(len(g))
-
-        recs = ()
-        num = -1
-        for l in new_records:
-            for h in l:
-                num += 1
-                if h == "-NOCHANGE-":
-                    h = f"|{old_records[num]}|"
-                    recs += (h,)
-                else:
-                    h = f"|{h}|"
-                    recs += (h,)
-
-        self.c.execute("SELECT * FROM "+up(table))
-        beta = []
-        for row in self.c.description:
-            beta.append(str(row[0]))
-
-        i = ""
-        for o in range(int(y)):
-            i += "{0} = :{1},".format(beta[o],u[o])
-        
-        t = u + recs
-        p = {}
-        for q in range(int(len(t)/2)):
-            p.update({u[q]:recs[q]})
-        p.update({"oid":str(value)})
-        
-        self.c.execute("UPDATE "+up(table)+" SET "+i[0:-1]+" WHERE oid = :oid ",p)
-
-        self.conn.commit()
-
-    def delete_record(self,table:str,*records:list, **oids:bool):
-        """Specify whether to delete record with an oid key or without.
-           Oid keys are set to each record by numerical order once the record is
-           inserted in a table."""
-        
-        def delete_record_without_oid():
-            self.c.execute("SELECT *,oid FROM "+up(table))
-            x = self.c.fetchall()
-
-            emp1 = []
-            for i in x:
-                emp2 = []
-                for j in i:
-                    emp2.append(str(j))
-                emp1.append(emp2)
-
-            emp3 = []
-            for a in emp1: 
-                e = "".join(a)
-                emp3.append(e)
-            
-            for l in records:
-                for c in l:
-                    for d in emp3:
-                        s= len(d)
-                        if d[0:s-1]==c:
-                            self.c.execute("DELETE FROM "+up(table)+" WHERE oid="+str(d[-1]))
-
-        def delete_record_with_oid():
-            for i in records:
-                for j in i:
-                    self.c.execute("DELETE FROM "+up(table)+" WHERE oid ="+str(j))
-
-        for value in oids.values():
-            if value == True:
-                delete_record_with_oid()
-            if value == False:
-                delete_record_without_oid()
-
-        self.conn.commit()
-        
-    def query_all(self,*tables:list):
-        for r in tables:
-            for table in r:
-                self.c.execute("SELECT *,oid FROM "+up(table))
-                query = self.c.fetchall()
-
-        self.conn.commit()
-        return query
-
-    def query_tables(self):
-        self.c.execute("SELECT name FROM sqlite_master WHERE type='table';")
-        tables = self.c.fetchall()
-        tables_list = []
-        for i in tables:
-            self.c.execute("SELECT * FROM "+i[0])
-            for j in self.c.description:
-                i += (j[0],)
-            tables_list.append(i)
-        return tables_list
+    #Delete All Content From Database
+    with DatabaseInteractions(db) as di:
+        di.delete_all_content()
     
-    def reset_all(self):
-        x = database_interactions(self.db).query_tables()
-        for i in x:
-            database_interactions(self.db).delete_table([str(i[0])])
-
-di = database_interactions(db_)
+    #Query All Tables In Database
+    with DatabaseInteractions(db) as di:
+        print(di.query_tables())
 
 if __name__ == "__main__":
-   pass
+    main()
