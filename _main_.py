@@ -1,7 +1,7 @@
 import sqlite3
 from typing import Any, List, Dict
 
-class DatabaseInteractions:
+class LiteDB:
     def __init__(self, db):
         self.db = db
 
@@ -67,43 +67,7 @@ class DatabaseInteractions:
                 self.conn.execute(f"DROP TABLE IF EXISTS {table}")
 
 def main():
-    db = "Database/example.db"
-
-    #Create Table
-    with DatabaseInteractions(db) as di:
-        di.create_table('students','id','name','age')
-
-    #Insert Record
-    with DatabaseInteractions(db) as di:
-        di.insert_record("students", {"id": 1, "name": "Alice", "age": 25})
-        di.insert_record("students", {"id": 2, "name": "Bob", "age": 30})
-    
-    #Query Records In A Table
-    with DatabaseInteractions(db) as di:
-        print(di.query_records("students"))
-    #Edit Record
-    with DatabaseInteractions(db) as di:
-        di.edit_record("students",1,name="Alice Smith")
-
-    #Delete Record
-    with DatabaseInteractions(db) as di:
-        di.delete_record("students",id=2)
-
-    #Delete Table
-    with DatabaseInteractions(db) as di:
-        di.delete_table("students")
-
-    #Reset All Tables
-    with DatabaseInteractions(db) as di:
-        di.reset_all()
-
-    #Delete All Content From Database
-    with DatabaseInteractions(db) as di:
-        di.delete_all_content()
-    
-    #Query All Tables In Database
-    with DatabaseInteractions(db) as di:
-        print(di.query_tables())
+    db = "example.db"
 
 if __name__ == "__main__":
     main()
