@@ -93,7 +93,7 @@ with LiteDB(db_file) as db:
 Deleting All Content from the Database
 
 ```python
-with LiteDB(db_file_ as db:
+with LiteDB(db_file) as db:
     db.delete_all_content()
 
 #Deletes all data in the database file
@@ -101,4 +101,4 @@ with LiteDB(db_file_ as db:
 
 ## Contributing
 
-Contributions to EasyDB are welcome! If you encounter any issues or have suggestions for improvements, please feel free to open an issue or submit a pull request on the [GitHub repository](https://github.com/karlbk/Sqlite3-Simple-Database/tree/main).
+Contributions to EasyDB are welcome! If you encounter any issues or have suggestions for improvements, please feel free to open an issue or submit a pull request on the [GitHub repository](https://github.com/karlbk/LiteDB/tree/main).
